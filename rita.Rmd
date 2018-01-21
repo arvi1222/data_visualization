@@ -1,0 +1,284 @@
+---
+title: "rita"
+author: "Arvi Punzalan"
+date: "1/18/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is an eda of the bureau of transportation statistics for airline on-time performance and causes of flight delays from 2008.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+
+```{r}
+flights <-read.csv("2008.csv")
+```
+
+```{r}
+dim(flights)
+```
+
+There are 7,009,728 observations with 29 variables.
+
+```{r}
+str(flights)
+```
+
+```{r}
+summary(flights[12:29])
+```
+
+The summaries of some variables are not very helpful such as date information and were thus removed.The delay data is mostly helpful only for the number of NA's. Delay information was given only sporatically for flights with long delays. 
+
+```{r}
+ggplot(aes(x = UniqueCarrier), data = flights) +
+  geom_bar()
+```
+
+There are 20 different carriers. Most have between 250,000 to 500,000 flights, but WN has many more, and a few have a lot less.
+
+```{r}
+ggplot(aes(x = AirTime), data = flights) +
+  geom_bar() + 
+  scale_x_continuous(limits = c(0, 500))
+
+summary(flights$AirTime)
+```
+
+This is skewed right and has some outliers.
+
+```{r}
+ggplot(aes(x = AirTime), data = flights) +
+  geom_bar() + 
+  scale_x_continuous(limits = c(500, 1400))
+```
+
+The tail of this distribution has very few values.
+
+```{r}
+ggplot(aes(x = ArrDelay), data = flights) +
+  geom_bar() +
+  scale_x_continuous(limits = c(-50, 200))
+```
+
+```{r}
+ggplot(aes(x = ArrDelay, color = UniqueCarrier), data = flights) +
+  geom_bar() +
+  scale_x_continuous(limits = c(-50, 50))
+```
+
+```{r}
+ggplot(aes(x = ArrDelay, color = Origin), data = flights) +
+  geom_bar() +
+  scale_x_continuous(limits = c(-50, 50))
+```
+
+
+```{r}
+summary(flights$ArrDelay)
+```
+
+There is a normal distribution centered near being on time. Interestingly, more flights arrived early than late. The outliers probably dragged the mean to positive. 
+
+```{r}
+ggplot(aes(x = DepDelay), data = flights) +
+  geom_bar() +
+  scale_x_continuous(limits = c(-25, 100))
+```
+
+```{r}
+summary(flights$DepDelay)
+```
+
+Like with arrivals, most flights actually departed early, but outliers made it so the mean was positive.
+
+```{r}
+ggplot(aes(x = TaxiIn), data = flights) +
+  geom_bar() + 
+  scale_x_continuous(limits = c(0, 50))
+```
+
+```{r}
+ggplot(aes(x = TaxiOut), data = flights) +
+  geom_bar() +
+    scale_x_continuous(limits = c(0, 75))
+
+```
+
+Both of the taxi variables are skewed right and don't seem to present any interesting information.
+
+###multivariate
+
+```{r}
+ggplot(aes(x=DayOfWeek, y = ArrDelay), data = flights) +
+  geom_point()
+```
+
+```{r}
+lax_flights <- subset(flights, Origin == 'LAX')
+
+top_ten_flights <- subset(flights, Origin == 'LAX' |
+                        Origin == 'ATL' |
+                        Origin == 'ORD' |
+                        Origin == 'DFW' |
+                        Origin == 'JFK' |
+                        Origin == 'DEN' |
+                        Origin == 'SFO' |
+                        Origin == 'LAS' |
+                        Origin == 'CLT' |
+                        Origin == 'SEA' )
+```
+
+```{r}
+ggplot(aes(x=factor(DayOfWeek), y = ArrDelay), data = lax_flights) +
+  geom_jitter(alpha = 1/100) +
+  geom_boxplot( alpha = .5, color = 'blue')
+```
+
+```{r}
+ggplot(aes(x=factor(Origin), y = ArrDelay), data = top_ten_flights) +
+  geom_jitter(alpha = 1/100) +
+  geom_boxplot( alpha = .5, color = 'blue')
+```
+
+```{r}
+ggplot(aes(x=factor(Origin), y = ArrDelay), data = top_ten_flights) +
+  geom_jitter(alpha = 1/100) +
+  geom_boxplot( alpha = .5, color = 'blue') + 
+  scale_y_continuous(limits = c(-20, 50))
+```
+
+```{r}
+weather_delayed.flights <- subset(flights, WeatherDelay != 'NA')
+
+summary(weather_delayed.flights)
+```
+
+```{r}
+ggplot(aes(x=factor(Origin), y = ArrDelay), 
+       data = subset(top_ten_flights, WeatherDelay != 'NA')) +
+  geom_jitter(alpha = 1/100) +
+  geom_boxplot( alpha = .5, color = 'blue') + 
+  scale_y_continuous(limits = c(-0, 100))
+```
+
+```{r}
+ggplot(aes(x = factor(Month)), data = weather_delayed.flights) +
+  geom_bar()
+```
+
+###data munging
+
+```{r}
+flights.noNA <- flights[complete.cases(flights),]
+
+```
+
+```{r}
+worst.weather.airports <- flights.noNA %>%
+  select(CarrierDelay, WeatherDelay, NASDelay, 
+         SecurityDelay, LateAircraftDelay, UniqueCarrier, Dest) %>%
+  group_by(Dest) %>%
+  summarise(weather = mean(WeatherDelay), total.count = n()) %>%
+  filter(total.count >= 10000) %>%
+  arrange(desc(weather))
+```
+
+```{r}
+worst.weather.airports
+```
+
+```{r}
+best.weather.airports <- flights.noNA %>%
+  select(CarrierDelay, WeatherDelay, NASDelay, 
+         SecurityDelay, LateAircraftDelay, UniqueCarrier, Dest) %>%
+  group_by(Dest) %>%
+  summarise(weather = mean(WeatherDelay), total.count = n()) %>%
+  filter(total.count >= 10000) %>%
+  arrange(weather)
+```
+
+```{r}
+best.weather.airports
+```
+
+```{r}
+library(jsonlite)
+
+flight_geo <- fromJSON('airports.json')
+```
+
+```{r}
+dim(flight_geo)
+```
+
+```{r}
+str(flight_geo)
+```
+
+```{r}
+flights.locations <- flight_geo %>%
+  select(lat, lon, city, state, code, name)
+```
+
+```{r}
+str(flights.locations)
+```
+
+```{r}
+colnames(flights.locations) <- c('lat', 'lon', 'city', 'state', 'airport.code', 'airport')
+```
+
+```{r}
+str(flights.locations)
+```
+
+```{r}
+flights.weather <- flights.noNA %>%
+  select(Month, DayofMonth, UniqueCarrier, Dest, WeatherDelay) %>%
+  filter(n() >= 10000, WeatherDelay > 0)
+```
+
+```{r}
+str(flights.weather)
+```
+
+```{r}
+colnames(flights.weather) <- c('month', 'day', 'airline', 'airport.code', 'weather.delay')
+
+str(flights.weather)
+```
+
+
+```{r}
+flights.locations.weather <- left_join(flights.weather, flights.locations, by = 'airport.code')
+```
+
+```{r}
+str(flights.locations.weather)
+```
+
+
+
+```{r}
+#add day of year variable for cycling through
+flights.locations.weather$day.of.year <- 
+  strftime(ISOdate(2008, flights.locations.weather$month, 
+                   flights.locations.weather$day), format = '%j')
+```
+
+
+```{r}
+str(flights.locations.weather)
+```
+
+```{r}
+write.csv(flights.locations.weather, 'flights.csv')
+```

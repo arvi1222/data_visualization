@@ -38,9 +38,13 @@
         function plot_points(data) {
           //draw circles
 
-          debugger;
+          var weather_max = d3.max(data, function(d) {
+            return d['weather.delay'];
+          });
 
-          //fix projection...need both coordinates
+          var radius = d3.scale.sqrt()
+                         .domain([0, weather_max])
+                         .range([0, 10]);
 
           svg.append('g')
              .attr('class', 'bubble')
@@ -50,7 +54,7 @@
              .append('circle')
              .attr('cx', function(d) {return projection([d['lon'], d['lat']])[0];})
              .attr('cy', function(d) {return projection([d['lat'], d['lat']])[1];})
-             .attr('r', 3); //function(d) {return d['weather.delay']});
+             .attr('r', function(d) {return radius(d['weather.delay'])});
         }
 
         d3.csv('flights.csv', function(d) {

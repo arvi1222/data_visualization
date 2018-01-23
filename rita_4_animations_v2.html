@@ -67,7 +67,6 @@
                 return d['day.of.year'] === day;
               });
 
-              debugger;
 
               var circles= svg.selectAll('circle')
                               .data(filtered);
@@ -86,10 +85,20 @@
 
           }
 
-              
+          var day_idx = 1;
 
-              update(9);
-              debugger;
+          var daily_weather_delays = setInterval(function() {
+            update(day_idx);
+
+            day_idx++;
+
+            if (day_idx > 366) {
+              clearInterval(daily_weather_delays)
+            }
+            console.log(day_idx);
+          }, 300);  
+
+              
         }
 
         

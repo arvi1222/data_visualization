@@ -4,6 +4,18 @@
   <meta charset="utf-8">
   <script src="http://d3js.org/d3.v3.min.js"></script>
     <style>
+      circle {
+        fill: red;
+        stroke: black;
+        stroke-width: 0.4;
+        opacity: 0.5;
+      }
+
+      h2 {
+        text-align: center;
+        color: black;
+      }
+
     </style>
     <script type="text/javascript">  
       function draw(geo_data) {
@@ -11,6 +23,10 @@
         var margin = 75,
             width = 1400 - margin,
             height = 600 - margin;
+
+        d3.select('body')
+          .append('h2')
+          .text('Weather Delays ')
 
         var svg = d3.select("body")
             .append("svg")
@@ -55,11 +71,7 @@
              .append('circle')
              .attr('cx', function(d) {return projection([d['lon'], d['lat']])[0];})
              .attr('cy', function(d) {return projection([d['lat'], d['lat']])[1];})
-             .attr('r', function(d) {return radius(d['weather.delay']);})
-             .attr('fill', 'red')
-             .attr('stroke', 'black')
-             .attr('stroke-width', 0.4)
-             .attr('opacity', 0.5);
+             .attr('r', function(d) {return radius(d['weather.delay']);});
 
 
           function update(day) {
@@ -67,35 +79,57 @@
                 return d['day.of.year'] === day;
               });
 
+              function formatDate(day) {
+                var monthNames = [
+                  "January", "February", "March",
+                  "April", "May", "June", "July",
+                  "August", "September", "October",
+                  "November", "December"
+                ];
+
+                var date = new Date(2008, 0);
+                date.setDate(day);
+
+                var day = date.getDate();
+                var monthIndex = date.getMonth();
+                var year = date.getFullYear();
+
+                return day + ' ' + monthNames[monthIndex] + ' ' + year;
+              }
+
+              d3.select('h2')
+                .text('Weather Delays    ' + formatDate(day));
 
               var circles= svg.selectAll('circle')
-                              .data(filtered);
+                              .data(filtered)
+                              .attr('cx', function(d) {return projection([d['lon'], d['lat']])[0];})
+                              .attr('cy', function(d) {return projection([d['lat'], d['lat']])[1];})
+                              .attr('r', function(d) {return radius(d['weather.delay']);});
                 
+              //debugger;
+
               circles.exit().remove(); //attr('fill', 'yellow');
 
               circles.enter()
                      .append('circle')
                      .attr('cx', function(d) {return projection([d['lon'], d['lat']])[0];})
                      .attr('cy', function(d) {return projection([d['lat'], d['lat']])[1];})
-                     .attr('r', function(d) {return radius(d['weather.delay']);})
-                     .attr('fill', 'red')
-                     .attr('stroke', 'black')
-                     .attr('stroke-width', 0.4)
-                     .attr('opacity', 0.5);
-
+                     .attr('r', function(d) {return radius(d['weather.delay']);});
+                     
           }
 
           var day_idx = 1;
 
           var daily_weather_delays = setInterval(function() {
             update(day_idx);
+            console.log(day_idx);
+
 
             day_idx++;
 
             if (day_idx > 366) {
               clearInterval(daily_weather_delays)
             }
-            console.log(day_idx);
           }, 300);  
 
               
